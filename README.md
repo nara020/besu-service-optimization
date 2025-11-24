@@ -7,7 +7,7 @@
 ## 📄 Paper
 
 Implementation of the paper:  
-*"Performance Optimization Methodology for Hyperledger Besu-based Services: A Case Study of Achieving 650 TPS"*
+*"Breaking the Throughput Barrier: 24-Fold Performance Improvement for Hyperledger Besu Through Service-Layer Optimization"*
 
 **Submitted to:** ICBTA 2025 (International Conference on Blockchain Technology and Applications)  
 **Conference:** December 12-14, 2025, Kanazawa, Japan
