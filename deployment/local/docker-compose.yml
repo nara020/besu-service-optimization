@@ -1,0 +1,145 @@
+# =============================================================================
+# Besu Service Optimization - Local Demo
+# =============================================================================
+# Quick start: docker compose up -d
+# 
+# This runs all components on a single machine for testing/demo purposes.
+# For production deployment, see deployment/cloud/
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Database Layer
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:17
+    container_name: besu-postgres
+    environment:
+      POSTGRES_DB: besu_demo
+      POSTGRES_USER: besu
+      POSTGRES_PASSWORD: besu_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - ../../database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U besu -d besu_demo"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - besu-network
+
+  # ---------------------------------------------------------------------------
+  # Layer 3: Blockchain (Hyperledger Besu) - Single Node for Demo
+  # ---------------------------------------------------------------------------
+  # Paper reference (Section 3.4):
+  # "JVM optimization: G1GC with 80% heap, 100ms max pause time"
+  # "Besu optimization: BONSAI storage, layered tx-pool"
+  besu-node1:
+    image: hyperledger/besu:24.3.0
+    container_name: besu-node1
+    user: root
+    command:
+      - --genesis-file=/config/genesis.json
+      - --node-private-key-file=/config/keys/node1/key
+      - --data-path=/data
+      - --rpc-http-enabled
+      - --rpc-http-api=ETH,NET,IBFT,WEB3,TXPOOL,ADMIN
+      - --rpc-http-host=0.0.0.0
+      - --rpc-http-port=8545
+      - --rpc-http-cors-origins=*
+      - --rpc-http-max-active-connections=50000
+      - --host-allowlist=*
+      - --min-gas-price=0
+      - --data-storage-format=BONSAI
+      - --tx-pool=layered
+      - --tx-pool-layer-max-capacity=5000000000
+      - --discovery-enabled=false
+    environment:
+      BESU_OPTS: >-
+        -XX:MaxRAMPercentage=80.0
+        -XX:+UseG1GC
+        -XX:MaxGCPauseMillis=100
+        -XX:+ParallelRefProcEnabled
+    volumes:
+      - ../../blockchain/config:/config:ro
+      - besu-node1-data:/data
+    ports:
+      - "8545:8545"
+    networks:
+      - besu-network
+
+  # ---------------------------------------------------------------------------
+  # Layer 2: Middleware (Node.js API Gateway)
+  # ---------------------------------------------------------------------------
+  # Paper reference (Section 3.3):
+  # "PM2 cluster mode with UV_THREADPOOL_SIZE=128"
+  # "Connection pooling to Besu RPC endpoint"
+  middleware:
+    build:
+      context: ../../middleware
+      dockerfile: Dockerfile
+    container_name: besu-middleware
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      UV_THREADPOOL_SIZE: 128
+      BLOCKCHAIN_RPC_URL: http://besu-node1:8545
+      # ============================================================================
+      # ⚠️  SECURITY WARNING - DEMO ONLY  ⚠️
+      # ============================================================================
+      # This is a well-known test private key from Besu documentation.
+      # It is PRE-FUNDED in genesis.json for demo purposes only.
+      #
+      # FOR PRODUCTION:
+      # - Use Docker Secrets or HashiCorp Vault
+      # - Generate new keys with proper key management
+      # - Never commit real private keys to version control
+      # ============================================================================
+      PRIVATE_KEY: "0x8f2a55949038a9610f50fb23b5883af3b4ecb3c3bb792cbcefbd1542c692be63"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - besu-node1
+    restart: on-failure
+    networks:
+      - besu-network
+
+  # ---------------------------------------------------------------------------
+  # Layer 1: Backend Service (Java Spring Boot)
+  # ---------------------------------------------------------------------------
+  # Paper reference (Section 3.1, 3.2):
+  # "Virtual Threads (JEP 444) for efficient I/O handling"
+  # "Transaction Isolation Pattern: separate DB and blockchain operations"
+  backend:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    container_name: besu-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_THREADS_VIRTUAL_ENABLED: "true"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/besu_demo
+      SPRING_DATASOURCE_USERNAME: besu
+      SPRING_DATASOURCE_PASSWORD: besu_password
+      MIDDLEWARE_BASE_URL: http://middleware:3000
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      middleware:
+        condition: service_started
+    restart: on-failure
+    networks:
+      - besu-network
+
+volumes:
+  postgres_data:
+  besu-node1-data:
+
+networks:
+  besu-network:
+    driver: bridge

@@ -1,0 +1,91 @@
+spring:
+  application:
+    name: besu-backend
+
+  # =============================================================================
+  # Virtual Threads Configuration (Key Optimization from Paper)
+  # =============================================================================
+  # Paper reference (Section 3.2):
+  # "By enabling spring.threads.virtual.enabled=true in a Spring Boot 3.2+
+  # application, the embedded Tomcat server handles every HTTP request on a
+  # new virtual thread."
+  threads:
+    virtual:
+      enabled: true
+
+  # =============================================================================
+  # Database Configuration
+  # =============================================================================
+  datasource:
+    url: jdbc:postgresql://localhost:5432/besu_demo
+    username: besu
+    password: besu_password
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 100
+      minimum-idle: 10
+      connection-timeout: 3000
+      idle-timeout: 30000
+      max-lifetime: 60000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+# =============================================================================
+# Server Configuration
+# =============================================================================
+server:
+  port: 8080
+  tomcat:
+    max-connections: 10000
+    accept-count: 1000
+    threads:
+      max: 200
+      min-spare: 10
+
+# =============================================================================
+# Middleware Configuration
+# =============================================================================
+middleware:
+  base-url: http://localhost:3000
+
+# =============================================================================
+# Logging Configuration
+# =============================================================================
+logging:
+  level:
+    root: INFO
+    besu.optimization: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: WARN
+
+# =============================================================================
+# Actuator Configuration
+# =============================================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+---
+# Docker profile
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+  datasource:
+    url: jdbc:postgresql://postgres:5432/besu_demo
+
+middleware:
+  base-url: http://middleware:3000
