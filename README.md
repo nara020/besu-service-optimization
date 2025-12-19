@@ -1,5 +1,12 @@
 # Besu Service Optimization
 
+[![CI](https://github.com/nara020/besu-service-optimization/actions/workflows/ci.yml/badge.svg)](https://github.com/nara020/besu-service-optimization/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)](https://openjdk.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-20-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Besu](https://img.shields.io/badge/Hyperledger-Besu-2F3134?logo=hyperledger&logoColor=white)](https://besu.hyperledger.org/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
 **27-Fold Performance Improvement for Hyperledger Besu Through Service-Layer Optimization**
 
 This repository provides the open-source implementation accompanying our research paper presented at ICBTA 2025.
