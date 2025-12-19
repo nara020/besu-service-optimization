@@ -7,6 +7,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "dev": "ts-node src/server.ts",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
     "pm2:start": "pm2 start ecosystem.config.js",
     "pm2:stop": "pm2 stop besu-middleware",
     "pm2:logs": "pm2 logs besu-middleware"
@@ -31,6 +33,9 @@
     "@types/morgan": "^1.9.9",
     "@types/node": "^20.10.5",
     "@types/uuid": "^9.0.7",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "eslint": "^8.56.0",
     "typescript": "^5.3.3"
   },
   "engines": {

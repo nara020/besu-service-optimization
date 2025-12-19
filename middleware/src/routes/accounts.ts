@@ -43,7 +43,7 @@ interface RegisterResponse {
  * The ~4-10 second blockchain wait happens here, not in the backend's
  * DB transaction (Transaction Isolation Pattern).
  */
-router.post('/register', async (req: Request<{}, any, RegisterRequest>, res: Response<RegisterResponse>) => {
+router.post('/register', async (req: Request<Record<string, never>, unknown, RegisterRequest>, res: Response<RegisterResponse>) => {
   const requestId = req.headers['x-request-id'] || uuidv4();
   console.log(`[${requestId}] Register request:`, req.body);
 
@@ -64,7 +64,7 @@ router.post('/register', async (req: Request<{}, any, RegisterRequest>, res: Res
     console.log(`[${requestId}] Created wallet: ${wallet.address}`);
 
     // Attempt initial funding (may take 4-10 seconds for blockchain finality)
-    let fundingResult = {
+    const fundingResult = {
       amount: '1.0 ETH',
       txHash: null as string | null,
       success: false
